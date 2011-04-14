@@ -1,0 +1,5 @@
+Barbershop
+
+Implementation of well known IPC (inter-process communication) problem called sleeping barber (http://en.wikipedia.org/wiki/Sleeping_barber_problem).
+
+Vaclav Bohac (c) 2011.
