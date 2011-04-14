@@ -16,6 +16,7 @@ void process_args(const char** args, const int length)
 		if (!strcmp(args[i], "--help")) {
 			sprintf(buf, "%.*s", (int) strlen(args[0]) - 2, args[0] + 2);
 			help(buf);
+			exit(EXIT_SUCCESS);
 		}
 		if (!strncmp(args[i], port, n)) {
 			sprintf(buf, "%.*s", 4, args[i] + n);
@@ -24,7 +25,7 @@ void process_args(const char** args, const int length)
 	}
 }
 
-int main (const int argc, const char* argv[])
+int main(const int argc, const char* argv[])
 {
 	process_args(argv, argc);
 
