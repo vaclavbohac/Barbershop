@@ -5,9 +5,12 @@
 
 struct server {
 	int	socket;
+	int	port;
 };
 
 int server_init(struct server* srv, unsigned int port);
+
+void server_start(struct server* srv);
 
 void server_stop(struct server* srv);
 

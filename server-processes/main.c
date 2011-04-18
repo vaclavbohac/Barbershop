@@ -37,12 +37,8 @@ int main(const int argc, const char* argv[])
 		return EXIT_FAILURE;
 	}
 
-	char* msg = NULL;
-	msg = build(INFORMATION, 042, "Hello, World");
-	printf("%s", msg);
-	free(msg);
+	server_start(s);
 
-	// start loop with accept
 	server_stop(s);
 	free(s);
 	return EXIT_SUCCESS;
