@@ -1,6 +1,7 @@
-#include "builder.h"
 #include <stdio.h>
 #include <string.h>
+
+#include "builder.h"
 
 int is_type(char* message, const char type)
 {
@@ -11,13 +12,29 @@ int is_type(char* message, const char type)
 }
 
 
-char* message(const char type, int code, const char* message)
+int is_type_from_struct(struct message* msg, const char type)
+{
+	return msg->type == type;
+}
+
+
+char* build(const char type, int code, const char* text)
 {
 	char buf[256];
-	int l = sprintf(buf, "%c[%02o]%c[%s]%c", type, code, SEPARATOR, message, ENDMESSAGE);
-	if (l == -1) {
-		perror("Error while creating message.");
-		return "";
-	}
+	sprintf(buf, "%c[%02o]%c[%s]%c", type, code, SEPARATOR, text, ENDMESSAGE);
 	return strdup(buf);
+}
+
+
+char* build_from_struct(struct message* msg)
+{
+	return build(msg->type, msg->code, msg->text);
+}
+
+
+void message_init(struct message* msg, const char type, const int code, const char* text)
+{
+	msg->type = type;
+	msg->code = code;
+	msg->text = strdup(text);
 }

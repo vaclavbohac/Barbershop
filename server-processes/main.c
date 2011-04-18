@@ -38,7 +38,7 @@ int main(const int argc, const char* argv[])
 	}
 
 	char* msg = NULL;
-	msg = message(INFORMATION, 042, "Hello, World");
+	msg = build(INFORMATION, 042, "Hello, World");
 	printf("%s", msg);
 	free(msg);
 
