@@ -4,6 +4,8 @@
 #include "server.h"
 #include "help.h"
 
+#include "messages/builder.h"
+
 #define DEFAULT_PORT 4242
 
 int global_port = DEFAULT_PORT;
@@ -34,6 +36,12 @@ int main(const int argc, const char* argv[])
 		free(s);
 		return EXIT_FAILURE;
 	}
+
+	char* msg = NULL;
+	msg = message(INFORMATION, 042, "Hello, World");
+	printf("%s", msg);
+	free(msg);
+
 	// start loop with accept
 	server_stop(s);
 	free(s);
