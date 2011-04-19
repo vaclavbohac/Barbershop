@@ -5,4 +5,6 @@
 
 #define ENDMESSAGE '\n'
 
+#define TERMINATION "close"
+
 #endif

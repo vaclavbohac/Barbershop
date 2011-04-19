@@ -3,18 +3,11 @@
 
 #include "builder.h"
 
-int is_type(char* message, const char type)
+void message_init(struct message* msg, const char type, const int code, const char* text)
 {
-	if (strlen(message) && message[0] == type) {
-		return 1; 
-	}
-	return 0;
-}
-
-
-int is_type_from_struct(struct message* msg, const char type)
-{
-	return msg->type == type;
+	msg->type = type;
+	msg->code = code;
+	msg->text = strdup(text);
 }
 
 
@@ -32,9 +25,100 @@ char* build_from_struct(struct message* msg)
 }
 
 
-void message_init(struct message* msg, const char type, const int code, const char* text)
+int is_type(char* message, const char type)
 {
-	msg->type = type;
-	msg->code = code;
-	msg->text = strdup(text);
+	if (strlen(message) && message[0] == type) {
+		return 1; 
+	}
+	return 0;
+}
+
+
+int is_type_from_struct(struct message* msg, const char type)
+{
+	return msg->type == type;
+}
+
+
+// Message Format: ?NN:text\n
+//                 ^^ ^^   ^
+//                 12 34   5
+// 1. Message type.
+// 2. Message code - optional.
+// 3. Separator
+// 4. Message body.
+// 5. Ends message.
+int message_from_string(struct message* msg, const char* string)
+{
+	int code;
+	char type, *text;
+	if (!is_valid_type(string[0])) {
+		return -1;
+	}
+	type = string[0];
+	if (has_code(string)) {
+		code = get_code(string);
+		printf("Code: %d\n", code);
+	}
+	if (has_text(string)) {
+		text = get_text(string);
+		printf("Body: %s\n", text);
+	}
+	message_init(msg, type, code, text);
+	return 0;
+}
+
+
+int has_text(const char* s)
+{
+	int i, len;
+	for (i = 0, len = strlen(s); i < len; i++) {
+		if (s[i] == SEPARATOR
+			&& (i + 1) < (len - 2)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+
+char* get_text(const char* s)
+{
+	char buf[256];
+	int i, len;
+	for (i = 0, len = strlen(s); i < len; i++) {
+		if (s[i] == SEPARATOR) {
+			sprintf(buf, "%.*s", (len - i - 1), s + i + 1);
+			return strdup(buf);
+		}
+	}
+	return "";
+}
+
+
+int has_code(const char* s)
+{
+	return (int) strlen(s) >= 3
+		&& s[1] >= '0'
+		&& s[1] <  '8'
+		&& s[2] >= '0'
+		&& s[2] <  '8';
+}
+
+
+int get_code(const char* s)
+{
+	char buf[16];
+	sprintf(buf, "%.*s", 2, s + 1);
+	return atoi(buf);
+}
+
+
+int is_valid_type(char type)
+{
+	return type == COMMAND	||
+		type == ANSWER	||
+		type == WARNING ||
+		type == ERROR	||
+		type == INFORMATION;
 }

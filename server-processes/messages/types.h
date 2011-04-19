@@ -1,7 +1,7 @@
 #ifndef MESSAGES_TYPES_H
 #define MESSAGES_TYPES_H
 
-#define	COMMAND	'c'
+#define	COMMAND	'C'
 
 #define ANSWER	'A'
 

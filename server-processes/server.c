@@ -14,9 +14,16 @@
 
 int server_init(struct server* srv, unsigned int port)
 {
-	int ret, handle = socket(AF_INET, SOCK_STREAM, 0);
+	int ret, opt, handle = socket(AF_INET, SOCK_STREAM, 0);
 	if (handle == -1) {
 		perror("Error when creating the server.");
+		return -1;
+	}
+	opt = 1;
+	ret = setsockopt(handle, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+	if (ret == -1) {
+		perror("Error when setting server reusability.");
+		close(handle);
 		return -1;
 	}
 	struct sockaddr_in addr;
@@ -42,23 +49,19 @@ void address_init(struct sockaddr_in* addr, unsigned int port)
 void server_start(struct server* srv)
 {
 	while (1) {
-		struct sockaddr_in client;
-		size_t clientSize = sizeof(client);
+		struct sockaddr_in clientAddr;
+		size_t clientSize = sizeof(clientAddr);
 
-		int handle = accept(srv->socket, (struct sockaddr*)&client, &clientSize);
-		if (handle == -1) {
+		int client = accept(srv->socket, (struct sockaddr*)&clientAddr, &clientSize);
+		if (client == -1) {
 			perror("Error while accepting connection.");
 		}
 		
-		printf("Accepted client: '%d'.\n", handle);
-		int l = 0;
-		do {
-			char buf[256];
-			l = read(handle, buf, sizeof(buf));
-			printf("%s", buf);
-		} while (l != 0);
-		printf("Closing connection with client: '%d'.\n", handle);
-		close(handle);
+		printf("Accepted client: '%d'.\n", client);
+		process(client, clientAddr);
+		
+		printf("Closing connection with client: '%d'.\n", client);
+		close(client);
 	}
 }
 
