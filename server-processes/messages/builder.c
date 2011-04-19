@@ -58,11 +58,9 @@ int message_from_string(struct message* msg, const char* string)
 	type = string[0];
 	if (has_code(string)) {
 		code = get_code(string);
-		printf("Code: %d\n", code);
 	}
 	if (has_text(string)) {
 		text = get_text(string);
-		printf("Body: %s\n", text);
 	}
 	message_init(msg, type, code, text);
 	return 0;
