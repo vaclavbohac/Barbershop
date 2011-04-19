@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "builder.h"
@@ -86,11 +87,10 @@ char* get_text(const char* s)
 	int i, len;
 	for (i = 0, len = strlen(s); i < len; i++) {
 		if (s[i] == SEPARATOR) {
-			int start = i + 1;
-			int n = len - start;
+			int start = i + 1,
+			    n = len - start;
 			strncpy(buf, s + start, n);
 			buf[n] = '\0';
-			int j = 0;
 			return strdup(buf);
 		}
 	}
