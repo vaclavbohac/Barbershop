@@ -10,7 +10,7 @@ FLAGS += -I$(SRV_PROC_DIR)
 
 
 test: test_builder.cpp builder.o
-	g++ -o $(BIN) $(FLAGS) $(LIBS) $(INC) test_builder.cpp builder.o
+	g++ -o $(BIN) $(FLAGS) test_builder.cpp builder.o
 
 builder.o:
 	g++ -c $(SRV_PROC_DIR)messages/builder.c $(SRV_PROC_DIR)messages/builder.h
