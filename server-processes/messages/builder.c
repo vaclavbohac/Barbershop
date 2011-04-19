@@ -15,7 +15,7 @@ void message_init(struct message* msg, const char type, const int code, const ch
 char* build(const char type, int code, const char* text)
 {
 	char buf[256];
-	sprintf(buf, "%c[%02o]%c[%s]%c", type, code, SEPARATOR, text, ENDMESSAGE);
+	sprintf(buf, "%c%02o%c%s", type, code, SEPARATOR, text);
 	return strdup(buf);
 }
 
@@ -51,8 +51,8 @@ int is_type_from_struct(struct message* msg, const char type)
 // 5. Ends message.
 int message_from_string(struct message* msg, const char* string)
 {
-	int code;
-	char type, *text;
+	int code = 0;
+	char type, *text = "";
 	if (!is_valid_type(string[0])) {
 		return -1;
 	}
