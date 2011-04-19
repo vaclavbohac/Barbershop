@@ -86,7 +86,11 @@ char* get_text(const char* s)
 	int i, len;
 	for (i = 0, len = strlen(s); i < len; i++) {
 		if (s[i] == SEPARATOR) {
-			sprintf(buf, "%.*s", (len - i - 1), s + i + 1);
+			int start = i + 1;
+			int n = len - start;
+			strncpy(buf, s + start, n);
+			buf[n] = '\0';
+			int j = 0;
 			return strdup(buf);
 		}
 	}
@@ -107,7 +111,8 @@ int has_code(const char* s)
 int get_code(const char* s)
 {
 	char buf[16];
-	sprintf(buf, "%.*s", 2, s + 1);
+	strncpy(buf, s + 1, 2);
+	buf[2] = '\0';
 	return atoi(buf);
 }
 

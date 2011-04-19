@@ -10,7 +10,7 @@
 
 #include "server.h"
 
-#define MAX_CLIENTS 5
+#define MAX_CLIENTS 10
 
 int server_init(struct server* srv, unsigned int port)
 {
@@ -56,7 +56,8 @@ void server_start(struct server* srv)
 		if (client == -1) {
 			perror("Error while accepting connection.");
 		}
-		
+
+		// @TODO Add select + fork.
 		printf("Accepted client: '%d'.\n", client);
 		process(client, clientAddr);
 		

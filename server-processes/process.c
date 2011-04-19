@@ -8,7 +8,7 @@
 
 void process(int client, struct sockaddr_in* clientAddr)
 {
-	char request[256];
+	char* request = malloc(sizeof(char*));
 	struct message* msg = malloc(sizeof(struct message));
 	size_t termlen = strlen(TERMINATION);
 	while (1) {
@@ -16,15 +16,34 @@ void process(int client, struct sockaddr_in* clientAddr)
 			perror("Error while receiving message.");
 			break;
 		}
-		if (strlen(request) >= 5 && !strncmp(request, TERMINATION, (int) termlen)) {
-			printf("Clients requests end of communication.\n");
-			break;
-		}
 		if (message_from_string(msg, request) == -1) {
 			perror("Error when parsing request.");
 			break;
 		}
-		printf("%c%d:%s", msg->type, msg->code, msg->text);
+		if (handle_request(msg) == -1) {
+			perror("Error when handling request.");
+			break;
+		}
+	}
+	free(msg);
+	free(request);
+}
+
+
+int handle_request(struct message* msg)
+{
+	switch (msg->type) {
+		case 'C':
+			printf("Proccessing command with code: %d (%s).\n", msg->code, msg->text);
+			return 0;
+		break;
+		case 'I':
+			printf("Proccessing command with code: %d (%s).\n", msg->code, msg->text);
+			return 0;
+		break;
+		default:
+			perror("Invalid message type.");
+			return -1;
 	}
 }
 
@@ -44,6 +63,9 @@ int get_request(char* request, int client)
 		perror("Could not read from client.");
 		return -1;
 	}
-	strcpy(request, buffer);
+	do {
+		buffer[length] = '\0';
+	} while (isspace(buffer[--length]));
+	strncpy(request, buffer, strlen(buffer));
 	return 0;
 }
