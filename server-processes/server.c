@@ -48,21 +48,38 @@ void address_init(struct sockaddr_in* addr, unsigned int port)
 
 void server_start(struct server* srv)
 {
+	int client = 0;
+
+	struct sockaddr_in clientAddr;
+	size_t clientSize = sizeof(clientAddr);
+
 	while (1) {
-		struct sockaddr_in clientAddr;
-		size_t clientSize = sizeof(clientAddr);
+      		fd_set read_wait_set;
 
-		int client = accept(srv->socket, (struct sockaddr*)&clientAddr, &clientSize);
-		if (client == -1) {
-			perror("Error while accepting connection.");
+		// Empty read_wait_set.
+		FD_ZERO(&read_wait_set);
+
+		client == 0 ? 
+			FD_SET(srv->socket, &read_wait_set) :
+			FD_SET(client, &read_wait_set);
+
+		if (select(MAX(srv->socket, client) + 1, &read_wait_set, 0, 0, 0) == -1) {
+			break;
 		}
-
-		// @TODO Add select + fork.
-		printf("Accepted client: '%d'.\n", client);
-		process(client, clientAddr);
 		
-		printf("Closing connection with client: '%d'.\n", client);
-		close(client);
+		if (FD_ISSET(srv->socket, &read_wait_set)) {
+			client = accept(srv->socket, (struct sockaddr*)&clientAddr, &clientSize);
+			if (client == -1) {
+				perror("Error while accepting connection.");
+			}
+		}
+		else if(FD_ISSET(client, &read_wait_set)) {
+			printf("Accepted client: '%d'.\n", client);
+			process(client, clientAddr);
+			
+			printf("Closing connection with client: '%d'.\n", client);
+			close(client);
+		}
 	}
 }
 
