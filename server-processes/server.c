@@ -9,6 +9,7 @@
 #include <unistd.h>
 
 #include "server.h"
+#include "process.h"
 
 #define MAX_CLIENTS 10
 
@@ -75,7 +76,7 @@ void server_start(struct server* srv)
 		}
 		else if(FD_ISSET(client, &read_wait_set)) {
 			printf("Accepted client: '%d'.\n", client);
-			process(client, clientAddr);
+			process(client, &clientAddr);
 			
 			printf("Closing connection with client: '%d'.\n", client);
 			close(client);
