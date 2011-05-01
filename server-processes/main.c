@@ -37,6 +37,7 @@ int main(const int argc, const char* argv[])
 		return EXIT_FAILURE;
 	}
 
+        printf("Server is running on port: %d\n", global_port);
 	server_start(s);
 
 	server_stop(s);
