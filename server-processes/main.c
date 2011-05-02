@@ -1,12 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "server.h"
 #include "help.h"
 
 #include "messages/builder.h"
 
 #define DEFAULT_PORT 4242
+
+
+// Semaphores definitions.
+#define SEM_MUTEX     0
+#define SEM_BARBER    1
+#define SEM_CUSTOMERS 2
+
+int global_custommers = 0;
+
 
 int global_port = DEFAULT_PORT;
 
