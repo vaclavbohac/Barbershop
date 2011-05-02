@@ -4,18 +4,20 @@
 #include <arpa/inet.h>
 
 #include "process.h"
+#include "tools.h"
 #include "messages/builder.h"
 
 void process(int client, struct sockaddr_in* clientAddr)
 {
 	char* request = malloc(sizeof(char*));
 	struct message* msg = malloc(sizeof(struct message));
-	size_t termlen = strlen(TERMINATION);
 	while (1) {
 		if (get_request(request, client) == -1) {
 			fprintf(stderr, "Error while receiving message.\n");
 			break;
 		}
+		// trim all whitespaces from right.
+		rtrim(request);
 		if (message_from_string(msg, request) == -1) {
 			fprintf(stderr, "Error when parsing request.\n");
 			break;
@@ -28,7 +30,6 @@ void process(int client, struct sockaddr_in* clientAddr)
 	free(msg);
 	free(request);
 }
-
 
 int handle_request(struct message* msg)
 {
@@ -54,18 +55,17 @@ int get_request(char* request, int client)
 	int length, bsize = sizeof(buffer);
 	length = read(client, buffer, bsize);
 	if (length == 0) {
-		request = NULL;
 		fprintf(stderr, "Client closed connection.\n");
 		return -1;
 	}
 	if (length == -1) {
-		request = NULL;
 		fprintf(stderr, "Could not read from client.\n");
 		return -1;
 	}
-	do {
-		buffer[length] = '\0';
-	} while (isspace(buffer[--length]));
-	strncpy(request, buffer, strlen(buffer));
+	buffer[length] = '\0';
+#ifdef DEBUG
+	printf("Buffer in get_request: %s, length: %d\n", buffer, length);
+#endif
+	strncpy(request, buffer, length + 1);
 	return 0;
 }

@@ -65,6 +65,7 @@ void server_start(struct server* srv)
 			FD_SET(client, &read_wait_set);
 
 		if (select(MAX(srv->socket, client) + 1, &read_wait_set, 0, 0, 0) == -1) {
+			perror("Select error:");
 			break;
 		}
 		
@@ -80,6 +81,7 @@ void server_start(struct server* srv)
 			
 			printf("Closing connection with client: '%d'.\n", client);
 			close(client);
+			client = 0;
 		}
 	}
 }
