@@ -25,6 +25,7 @@
 
 int global_custommers = 0;
 
+int global_semaphores;
 
 int global_port = DEFAULT_PORT;
 
@@ -45,6 +46,24 @@ void process_args(const char** args, const int length)
 	}
 }
 
+int down(int semaphore)
+{
+	struct sembuf operation[1];
+	operation[0].sem_num = semaphore;
+	operation[0].sem_op = -1;
+	operation[0].sem_flg = 0;
+	return semop(global_semaphores, operation, 1);
+}
+
+int up(int semaphore)
+{
+	struct sembuf operation[1];
+	operation[0].sem_num = semaphore;
+	operation[0].sem_op = 1;
+	operation[0].sem_flg = 0;
+	return semop(global_semaphores, operation, 1);
+}
+
 int main(const int argc, const char* argv[])
 {
 	process_args(argv, argc);
@@ -60,34 +79,39 @@ int main(const int argc, const char* argv[])
 	}
 
 	if (!pid) { // Barber (child) process.
-		// Get existing semaphores.
-		int semaphores = semget(getuid(), SEM_COUNT, 0666);
-		if (semaphores == -1) {
-			semaphores = semget(getuid(), SEM_COUNT, 0666 | IPC_CREAT);
-			if (semaphores == -1) {
+		global_semaphores = semget(getuid(), SEM_COUNT, 0666);
+		if (global_semaphores == -1) {
+			global_semaphores = semget(getuid(), SEM_COUNT, 0666 | IPC_CREAT);
+			if (global_semaphores == -1) {
 				perror("Semaphores cannot be created.");
 				return EXIT_FAILURE;
 			}
 			
 			// Set up  mutual exclusion.
-			if (semctl(semaphores, SEM_MUTEX, SETVAL, 1) == -1) {
+			if (semctl(global_semaphores, SEM_MUTEX, SETVAL, 1) == -1) {
 				perror("Mutex cannot be setted up.");
 				return EXIT_FAILURE;
 			}
 
 			// Set up customers.
-			if (semctl(semaphores, SEM_CUSTOMERS, SETVAL, 0) == -1) {
+			if (semctl(global_semaphores, SEM_CUSTOMERS, SETVAL, 0) == -1) {
 				perror("Customers cannot be setted up.");
 				return EXIT_FAILURE;
 			}
 
 			// Set up barber.
-			if (semctl(semaphores, SEM_BARBER, SETVAL, 0) == -1) {
+			if (semctl(global_semaphores, SEM_BARBER, SETVAL, 0) == -1) {
 				perror("Barber cannot be setted up.");
 				return EXIT_FAILURE;
 			}
 		}
 		printf("I am the barber.\n");
+		/**
+		down(SEM_CUSTOMERS);	
+		up(SEM_BARBER);	
+		printf("Cutting hair.\n");
+		printf("I am running again.\n");
+		*/
 	}
 	else {
 		struct server* s = (struct server*) malloc(sizeof(struct server)); 
