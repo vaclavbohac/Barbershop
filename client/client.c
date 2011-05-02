@@ -81,17 +81,20 @@ int client_start(struct client* cli)
 	}
 
 	printf("Message received: %s\n", msg->text);
-	if (strcmp("chairfree", msg->text) != 0) {
+	if (!strcmp("chairnotfree", msg->text)) {
 		printf("Barbershop is full.\n");
 	}
+	else if(msg->type == INFORMATION && msg->code == 1) {
+		// Chair is free.
+		printf("%s\n", msg->text);
+	}
 	else {
-		printf("Chair is empty.\n");
+		printf("Unknown message.\n");
 	}
 
 	free(msg);
 	return 0;
 }
-
 
 void client_stop(struct client* cli)
 {
