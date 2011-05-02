@@ -49,7 +49,7 @@ void address_init(struct sockaddr_in* addr, unsigned int port)
 
 void server_start(struct server* srv)
 {
-	int client = 0;
+	int pid, client = 0;
 
 	struct sockaddr_in clientAddr;
 	size_t clientSize = sizeof(clientAddr);
@@ -74,9 +74,21 @@ void server_start(struct server* srv)
 			if (client == -1) {
 				perror("Error while accepting connection.");
 			}
+			printf("Accepted client: '%d'.\n", client);
+#ifdef DEBUG
+			printf("Creating new child.\n");
+#endif
+			pid = fork();
+			if (pid == -1) {
+				perror("Error while forking.");
+			}
+			else if (pid > 0) {
+				// Close not needed.
+				close(client);
+				client = 0;
+			}
 		}
 		else if(FD_ISSET(client, &read_wait_set)) {
-			printf("Accepted client: '%d'.\n", client);
 			process(client, &clientAddr);
 			
 			printf("Closing connection with client: '%d'.\n", client);
