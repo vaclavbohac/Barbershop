@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <ctype.h>
 
-#include "help.h"
+#include "tools.h"
 
 void rtrim(char* str)
 {

@@ -4,8 +4,10 @@
 #include <arpa/inet.h>
 
 #include "process.h"
-#include "tools.h"
+#include "barber.h"
+#include "tools/tools.h"
 #include "messages/builder.h"
+#include "shmemory/shared.h"
 
 void process(int client, struct sockaddr_in* clientAddr)
 {
@@ -21,7 +23,7 @@ void process(int client, struct sockaddr_in* clientAddr)
 			fprintf(stderr, "Error when parsing request.\n");
 			break;
 		}
-		if (handle_request(msg) == -1) {
+		if (handle_request(client, msg) == -1) {
 			fprintf(stderr, "Error when handling request.\n");
 			break;
 		}
@@ -30,14 +32,25 @@ void process(int client, struct sockaddr_in* clientAddr)
 	free(msg);
 }
 
-int handle_request(struct message* msg)
+int handle_request(int client, struct message* msg)
 {
+	char buf[256];
 	switch (msg->type) {
-		case 'C':
+		case COMMAND:
 			printf("Processing command with code: %d (%s).\n", msg->code, msg->text);
+			if (!strcmp(msg->text, "enter")) {
+				struct shared* data = get_shared(getuid());
+				if (data->custommers < MAX_CHAIRS) {
+					sprintf(buf, "chair %d is empty", data->custommers + 1);
+					send_response(client, build(INFORMATION, 1, buf));
+				}
+				else {
+					send_response(client, build(INFORMATION, 0, "chairnotfree"));
+				}
+			}
 			return 0;
 		break;
-		case 'I':
+		case INFORMATION:
 			printf("Processing command with code: %d (%s).\n", msg->code, msg->text);
 			return 0;
 		break;
@@ -45,6 +58,13 @@ int handle_request(struct message* msg)
 			fprintf(stderr, "Invalid message type.\n");
 			return -1;
 	}
+}
+
+int send_response(int client, char* message)
+{
+	char buffer[256];
+	int len = sprintf(buffer, "%s", message);
+	return write(client, buffer, len);
 }
 
 

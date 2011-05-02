@@ -5,27 +5,26 @@
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
+#include "barber.h"
+#include "shmemory/shared.h"
 #include "server.h"
 #include "help.h"
 
 #include "messages/builder.h"
 
 
+
 #define DEFAULT_PORT 4242
 
 
 // Semaphores definitions.
-#define SEM_MUTEX     0
-#define SEM_BARBER    1
-#define SEM_CUSTOMERS 2
+#define SEM_MUTEX      0
+#define SEM_BARBER     1
+#define SEM_CUSTOMMERS 2
 
 // Number of semaphores.
 #define SEM_COUNT     3
 
-
-int global_custommers = 0;
-
-int global_semaphores;
 
 int global_port = DEFAULT_PORT;
 
@@ -46,22 +45,22 @@ void process_args(const char** args, const int length)
 	}
 }
 
-int down(int semaphore)
+int down(int semid, int semaphore)
 {
 	struct sembuf operation[1];
 	operation[0].sem_num = semaphore;
 	operation[0].sem_op = -1;
 	operation[0].sem_flg = 0;
-	return semop(global_semaphores, operation, 1);
+	return semop(semid, operation, 1);
 }
 
-int up(int semaphore)
+int up(int semid, int semaphore)
 {
 	struct sembuf operation[1];
 	operation[0].sem_num = semaphore;
 	operation[0].sem_op = 1;
 	operation[0].sem_flg = 0;
-	return semop(global_semaphores, operation, 1);
+	return semop(semid, operation, 1);
 }
 
 int main(const int argc, const char* argv[])
@@ -74,34 +73,37 @@ int main(const int argc, const char* argv[])
 
 	int pid = fork();
 	if (pid == -1) {
-		perror("Error while creating barber process.");
+		perror("Error while creating barber process");
 		return EXIT_FAILURE;
 	}
 
 	if (!pid) { // Barber (child) process.
-		global_semaphores = semget(getuid(), SEM_COUNT, 0666);
-		if (global_semaphores == -1) {
-			global_semaphores = semget(getuid(), SEM_COUNT, 0666 | IPC_CREAT);
-			if (global_semaphores == -1) {
-				perror("Semaphores cannot be created.");
+		// Set shared memory.
+		struct shared* data = get_shared(getuid());
+		data->custommers = 0;
+		data->semaphores = semget(getuid(), SEM_COUNT, 0666);
+		if (data->semaphores == -1) {
+			data->semaphores = semget(getuid(), SEM_COUNT, 0666 | IPC_CREAT);
+			if (data->semaphores == -1) {
+				perror("Semaphores cannot be created");
 				return EXIT_FAILURE;
 			}
 			
 			// Set up  mutual exclusion.
-			if (semctl(global_semaphores, SEM_MUTEX, SETVAL, 1) == -1) {
-				perror("Mutex cannot be setted up.");
+			if (semctl(data->semaphores, SEM_MUTEX, SETVAL, 1) == -1) {
+				perror("Mutex cannot be setted up");
 				return EXIT_FAILURE;
 			}
 
 			// Set up customers.
-			if (semctl(global_semaphores, SEM_CUSTOMERS, SETVAL, 0) == -1) {
-				perror("Customers cannot be setted up.");
+			if (semctl(data->semaphores, SEM_CUSTOMMERS, SETVAL, 0) == -1) {
+				perror("Customers cannot be setted up");
 				return EXIT_FAILURE;
 			}
 
 			// Set up barber.
-			if (semctl(global_semaphores, SEM_BARBER, SETVAL, 0) == -1) {
-				perror("Barber cannot be setted up.");
+			if (semctl(data->semaphores, SEM_BARBER, SETVAL, 0) == -1) {
+				perror("Barber cannot be setted up");
 				return EXIT_FAILURE;
 			}
 		}
