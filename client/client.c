@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
 
 #include "client.h"
+#include "messages/builder.h"
 
 int client_init(struct client* cli, char* host, int port)
 {
@@ -36,18 +39,56 @@ int client_init(struct client* cli, char* host, int port)
 }
 
 
+int send_request(struct client* c, struct message* msg)
+{
+	char buffer[256];
+	int len = sprintf(buffer, "%s", build_from_struct(msg)); 
+	return write(c->socket, buffer, len);
+}
+
+
+int get_response(struct client* c, struct message* msg)
+{
+	char buffer[256];
+	int length = read(c->socket, buffer, sizeof(buffer));
+	buffer[length] = '\0';
+	if (length == -1) {
+		fprintf(stderr, "Error while reading from socket.\n");
+		return -1;
+	}
+	return message_from_string(msg, buffer);
+}
+
+
 int client_start(struct client* cli)
 {
 #ifdef DEBUG
 	printf("Client is running.\n");
 #endif
-
-	char buf[256];
-	int len = sprintf(buf, "C:enter\n");
-	if (write(cli->socket, buf, len) == -1) {
-		fprintf(stderr, "Error while sending message.\n");
+	struct message* msg = (struct message*)
+				malloc(sizeof(struct message));
+	message_init(msg, COMMAND, 0, "enter");	// 1. Send enter request.
+	if (send_request(cli, msg) == -1) {
+		fprintf(stderr, "Error while sending request.\n");
+		free(msg);
 		return -1;
 	}
+
+	if (get_response(cli, msg) == -1) { // 2. Get response.
+		fprintf(stderr, "Error while getting response.\n");
+		free(msg);
+		return -1;
+	}
+
+	printf("Message received: %s\n", msg->text);
+	if (strcmp("chairfree", msg->text) != 0) {
+		printf("Barbershop is full.\n");
+	}
+	else {
+		printf("Chair is empty.\n");
+	}
+
+	free(msg);
 	return 0;
 }
 
