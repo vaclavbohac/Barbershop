@@ -38,6 +38,7 @@ int server_init(struct server* srv, unsigned int port)
 	listen(handle, MAX_CLIENTS);
 	srv->socket = handle;
 	srv->port = port;
+	return 0;
 }
 
 void address_init(struct sockaddr_in* addr, unsigned int port)
