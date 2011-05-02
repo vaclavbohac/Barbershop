@@ -9,14 +9,13 @@
 
 void process(int client, struct sockaddr_in* clientAddr)
 {
-	char* request = malloc(sizeof(char*));
-	struct message* msg = malloc(sizeof(struct message));
+	char* request = (char*) malloc(sizeof(char*));
+	struct message* msg = (struct message*) malloc(sizeof(struct message));
 	while (1) {
 		if (get_request(request, client) == -1) {
 			fprintf(stderr, "Error while receiving message.\n");
 			break;
 		}
-		// trim all whitespaces from right.
 		rtrim(request);
 		if (message_from_string(msg, request) == -1) {
 			fprintf(stderr, "Error when parsing request.\n");
@@ -27,8 +26,8 @@ void process(int client, struct sockaddr_in* clientAddr)
 			break;
 		}
 	}
-	free(msg);
 	free(request);
+	free(msg);
 }
 
 int handle_request(struct message* msg)
@@ -53,6 +52,7 @@ int get_request(char* request, int client)
 {
 	char buffer[256];
 	int length, bsize = sizeof(buffer);
+	strcpy(request, ""); // Saves memory corruption.
 	length = read(client, buffer, bsize);
 	if (length == 0) {
 		fprintf(stderr, "Client closed connection.\n");
