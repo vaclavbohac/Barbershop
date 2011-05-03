@@ -7,3 +7,4 @@ all:
 clean:
 	@(cd server-processes; make clean)
 	@(cd client; make clean)
+	@(cd shared; make clean)
