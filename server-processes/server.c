@@ -88,7 +88,6 @@ void server_start(struct server* srv)
 				// Close what is not needed.
 				close(client);
 				client = 0;
-				waitpid(-1, NULL, WNOHANG);
 			}
 		}
 		else if(FD_ISSET(client, &read_wait_set)) {
@@ -97,6 +96,7 @@ void server_start(struct server* srv)
 			printf("Closing connection with client: '%d'.\n", client);
 			close(client);
 			client = 0;
+			exit(EXIT_SUCCESS);
 		}
 	}
 }

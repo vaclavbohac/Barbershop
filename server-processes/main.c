@@ -5,6 +5,8 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
+#include <sys/wait.h>
+#include <signal.h>
 
 #include "barber.h"
 #include "server.h"
@@ -80,7 +82,7 @@ int main(const int argc, const char* argv[])
 			data->custommers -= 1;
 			// Get time from custommer.
 			int time = data->times[data->custommers];
-			int handle = data->handles[data->custommers];
+			// int handle = data->handles[data->custommers];
 			// Release the kraken.
 			up(data->semaphores, SEM_BARBER);
 			// Leave critical section.
@@ -91,6 +93,9 @@ int main(const int argc, const char* argv[])
 		}
 	}
 	else {
+		// Ignore SIGCHLD. 
+		signal(SIGCHLD, SIG_IGN);
+
 		struct server s;
 		// Initialize server socket and bind it.
 		if (server_init(&s, global_port) == -1) {
@@ -103,7 +108,6 @@ int main(const int argc, const char* argv[])
 
 		// Stop server, free memory and wait.
 		server_stop(&s);
-		wait();
 	}
 
 	// Try removing semaphores.
