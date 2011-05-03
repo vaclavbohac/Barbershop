@@ -7,7 +7,7 @@
 struct message {
 	int code;
 	char type;
-	char* text;
+	char text[256];
 };
 
 int is_valid_type(char type);

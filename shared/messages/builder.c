@@ -3,12 +3,13 @@
 #include <string.h>
 
 #include "builder.h"
+#include "tools/tools.h"
 
 void message_init(struct message* msg, const char type, const int code, const char* text)
 {
 	msg->type = type;
 	msg->code = code;
-	msg->text = strdup(text);
+	strcpy(msg->text, text);
 }
 
 
@@ -65,6 +66,7 @@ int message_from_string(struct message* msg, const char* string)
 	}
 	if (has_text(string)) {
 		text = get_text(string);
+		rtrim(text);
 	}
 	message_init(msg, type, code, text);
 	return 0;
