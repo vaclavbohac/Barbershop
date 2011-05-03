@@ -1,30 +1,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/sem.h>
 
 #include "barber.h"
-#include "shmemory/shared.h"
 #include "server.h"
 #include "help.h"
 
+#include "protocol/server.h"
+#include "semaphores/sems.h"
+#include "shmemory/shared.h"
 #include "messages/builder.h"
 
-
-
 #define DEFAULT_PORT 4242
-
-
-// Semaphores definitions.
-#define SEM_MUTEX      0
-#define SEM_BARBER     1
-#define SEM_CUSTOMMERS 2
-
-// Number of semaphores.
-#define SEM_COUNT     3
-
 
 int global_port = DEFAULT_PORT;
 
@@ -45,26 +36,16 @@ void process_args(const char** args, const int length)
 	}
 }
 
-int down(int semid, int semaphore)
+void cut_hair(int time)
 {
-	struct sembuf operation[1];
-	operation[0].sem_num = semaphore;
-	operation[0].sem_op = -1;
-	operation[0].sem_flg = 0;
-	return semop(semid, operation, 1);
-}
-
-int up(int semid, int semaphore)
-{
-	struct sembuf operation[1];
-	operation[0].sem_num = semaphore;
-	operation[0].sem_op = 1;
-	operation[0].sem_flg = 0;
-	return semop(semid, operation, 1);
+	printf("Cutting hair for %d seconds.\n", time);
+	sleep(time);
+	printf("Hair cutted.\n");
 }
 
 int main(const int argc, const char* argv[])
 {
+	// Process user arguments.
 	process_args(argv, argc);
 
 #ifdef DEBUG
@@ -78,56 +59,56 @@ int main(const int argc, const char* argv[])
 	}
 
 	if (!pid) { // Barber (child) process.
-		// Set shared memory.
+		// Set shared memory and semaphores.
 		struct shared* data = get_shared(getuid());
-		data->custommers = 0;
-		data->semaphores = semget(getuid(), SEM_COUNT, 0666);
+		data->semaphores = semaphores_init(getuid());
 		if (data->semaphores == -1) {
-			data->semaphores = semget(getuid(), SEM_COUNT, 0666 | IPC_CREAT);
-			if (data->semaphores == -1) {
-				perror("Semaphores cannot be created");
-				return EXIT_FAILURE;
-			}
-			
-			// Set up  mutual exclusion.
-			if (semctl(data->semaphores, SEM_MUTEX, SETVAL, 1) == -1) {
-				perror("Mutex cannot be setted up");
-				return EXIT_FAILURE;
-			}
-
-			// Set up customers.
-			if (semctl(data->semaphores, SEM_CUSTOMMERS, SETVAL, 0) == -1) {
-				perror("Customers cannot be setted up");
-				return EXIT_FAILURE;
-			}
-
-			// Set up barber.
-			if (semctl(data->semaphores, SEM_BARBER, SETVAL, 0) == -1) {
-				perror("Barber cannot be setted up");
-				return EXIT_FAILURE;
-			}
+			perror("Semaphores initialization error");
+			return EXIT_FAILURE;
 		}
-		printf("I am the barber.\n");
-		/**
-		down(SEM_CUSTOMERS);	
-		up(SEM_BARBER);	
-		printf("Cutting hair.\n");
-		printf("I am running again.\n");
-		*/
+		// Set customers to the default state.
+		data->custommers = 0;
+		while (1) {
+#ifdef DEBUG
+			printf("Custommers down.\n");
+#endif
+			// Wait for custommer.
+			down(data->semaphores, SEM_CUSTOMMERS);
+			// Enter critical section.
+			down(data->semaphores, SEM_MUTEX);
+			// Decrease number of custommers.
+			data->custommers -= 1;
+			// Get time from custommer.
+			int time = data->times[data->custommers];
+			int handle = data->handles[data->custommers];
+			// Release the kraken.
+			up(data->semaphores, SEM_BARBER);
+			// Leave critical section.
+			up(data->semaphores, SEM_MUTEX);
+
+			// Cut custommer's hair.
+			cut_hair(time);
+		}
 	}
 	else {
-		struct server* s = (struct server*) malloc(sizeof(struct server)); 
-		if (server_init(s, global_port) == -1) {
-			free(s);
+		struct server s;
+		// Initialize server socket and bind it.
+		if (server_init(&s, global_port) == -1) {
+			perror("Error while init. of server");
 			return EXIT_FAILURE;
 		}
 
 		printf("Server is running on port: %d\n", global_port);
-		server_start(s);
+		server_start(&s); // Run Forest, run!
 
-		server_stop(s);
-		free(s);
+		// Stop server, free memory and wait.
+		server_stop(&s);
 		wait();
 	}
+
+	// Try removing semaphores.
+	int semaphores = semaphores_init(getuid());
+	semctl(semaphores, 0, IPC_RMID, NULL);
+
 	return EXIT_SUCCESS;
 }

@@ -6,6 +6,5 @@
 
 void process(int client, struct sockaddr_in* clientAddr);
 
-int get_request(char* request, int client);
 
 #endif

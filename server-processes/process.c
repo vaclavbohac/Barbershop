@@ -5,87 +5,80 @@
 
 #include "process.h"
 #include "barber.h"
-#include "tools/tools.h"
-#include "messages/builder.h"
 #include "shmemory/shared.h"
+#include "protocol/request.h"
+#include "protocol/response.h"
 
-void process(int client, struct sockaddr_in* clientAddr)
+void process(int handle, struct sockaddr_in* clientAddr)
 {
-	char* request = (char*) malloc(sizeof(char*));
-	struct message* msg = (struct message*) malloc(sizeof(struct message));
+#ifdef DEBUG
+	printf("Creating client structure.\n");
+#endif
+	struct message msg;
+	struct client cli;
+	cli.handle = handle;
+
 	while (1) {
-		if (get_request(request, client) == -1) {
-			fprintf(stderr, "Error while receiving message.\n");
+		if (get_request(&cli, &msg) == -1) {
+			fprintf(stderr, "Error while getting request.\n");
 			break;
 		}
-		rtrim(request);
-		if (message_from_string(msg, request) == -1) {
-			fprintf(stderr, "Error when parsing request.\n");
+		if (!strcmp(msg.text, "bye")) {
+			printf("User requested 'close' connection.\n");
 			break;
 		}
-		if (handle_request(client, msg) == -1) {
+		if (handle_request(&cli, &msg) == -1) {
 			fprintf(stderr, "Error when handling request.\n");
 			break;
 		}
 	}
-	free(request);
-	free(msg);
 }
 
-int handle_request(int client, struct message* msg)
+int handle_request(struct client* cli, struct message* request)
 {
 	char buf[256];
-	switch (msg->type) {
+	int length, chair = 0;
+	printf("Processing command with code: %d (%s).\n", request->code, request->text);
+	switch (request->type) {
 		case COMMAND:
-			printf("Processing command with code: %d (%s).\n", msg->code, msg->text);
-			if (!strcmp(msg->text, "enter")) {
+			if (!strcmp(request->text, "enter")) {
 				struct shared* data = get_shared(getuid());
+				struct message response;
 				if (data->custommers < MAX_CHAIRS) {
-					sprintf(buf, "chair %d is empty", data->custommers + 1);
-					send_response(client, build(INFORMATION, 1, buf));
+					length = sprintf(buf, "chair %d is empty", data->custommers + 1);
+					buf[length] = '\0';
+					message_init(&response, INFORMATION, 1, buf);
 				}
 				else {
-					send_response(client, build(INFORMATION, 0, "chairnotfree"));
+					message_init(&response, INFORMATION, 0, "chairnotfree");
+				}
+				send_response(cli, &response);
+			}
+		break;
+		case ANSWER:
+			if (!strcmp(request->text, "chair")) {
+				struct message time_req;
+
+				chair = request->code;
+				printf("Received chair: %d\n", chair);
+
+				get_request(cli, &time_req);
+				printf("%s\n", time_req.text);
+
+				if (!strcmp(time_req.text, "seconds")) {
+					struct shared* data = get_shared(getuid());	
+					data->times[chair] = time_req.code;
+					data->handles[chair] = cli->handle;
+				}
+				else {
+					fprintf(stderr, "Wrong communication.\n");
+					return -1;
 				}
 			}
-			return 0;
-		break;
-		case INFORMATION:
-			printf("Processing command with code: %d (%s).\n", msg->code, msg->text);
-			return 0;
 		break;
 		default:
 			fprintf(stderr, "Invalid message type.\n");
 			return -1;
 	}
-}
-
-int send_response(int client, char* message)
-{
-	char buffer[256];
-	int len = sprintf(buffer, "%s", message);
-	return write(client, buffer, len);
-}
-
-
-int get_request(char* request, int client)
-{
-	char buffer[256];
-	int length, bsize = sizeof(buffer);
-	strcpy(request, ""); // Saves memory corruption.
-	length = read(client, buffer, bsize);
-	if (length == 0) {
-		fprintf(stderr, "Client closed connection.\n");
-		return -1;
-	}
-	if (length == -1) {
-		fprintf(stderr, "Could not read from client.\n");
-		return -1;
-	}
-	buffer[length] = '\0';
-#ifdef DEBUG
-	printf("Buffer in get_request: %s, length: %d\n", buffer, length);
-#endif
-	strncpy(request, buffer, length + 1);
 	return 0;
 }

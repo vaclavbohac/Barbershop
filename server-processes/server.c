@@ -4,6 +4,7 @@
 #include <sys/param.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -84,9 +85,10 @@ void server_start(struct server* srv)
 				perror("Error while forking.");
 			}
 			else if (pid > 0) {
-				// Close not needed.
+				// Close what is not needed.
 				close(client);
 				client = 0;
+				waitpid(-1, NULL, WNOHANG);
 			}
 		}
 		else if(FD_ISSET(client, &read_wait_set)) {

@@ -3,10 +3,7 @@
 
 #include <arpa/inet.h>
 
-struct server {
-	int	socket;
-	int	port;
-};
+#include "protocol/server.h"
 
 int server_init(struct server* srv, unsigned int port);
 
