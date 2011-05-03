@@ -1,7 +1,7 @@
 all: sems.o
 
-sems.o: sems.h sems.c
-	cc -c sems.h sems.c
+sems.o: sems.c sems.h 
+	cc -c $< -o ../$@
 
 clean:
-	rm *.o *.gch
+	-rm ../sems.o

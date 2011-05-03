@@ -1,7 +1,7 @@
 all: shared.o
 
 shared.o: shared.c shared.h
-	cc -c shared.c shared.h
+	cc -c $< -o ../$@
 
 clean:
-	rm *.o *.gch
+	-rm ../shared.o

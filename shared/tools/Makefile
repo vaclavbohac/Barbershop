@@ -1,7 +1,7 @@
 all: tools.o
 
-tools.o: tools.h tools.c
-	cc -c tools.h tools.c
+tools.o: tools.c tools.h
+	cc -c $< -o ../$@
 
 clean:
-	rm *.o *.gch
+	-rm ../tools.o

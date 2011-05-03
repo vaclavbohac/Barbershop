@@ -1,35 +1,20 @@
 all: client
 
-BIN = client
+BIN = ../bin/client
 
-INC = ../shared/
+INC = ../shared
 
-FLAGS = -I$(INC)
-FLAGS += -DDEBUG
+client: client.o main.o shared
+	cc $(FLAGS) -I$(INC) -o $(BIN) client.o main.o ../shared/shared.o ../shared/builder.o ../shared/sems.o ../shared/request.o ../shared/response.o ../shared/tools.o
 
-client: client.o builder.o shared.o sems.o tools.o response.o request.o
-	cc $(FLAGS) -o $(BIN) client.o main.c builder.o shared.o sems.o tools.o response.o request.o
+main.o: main.c
+	cc $(FLAGS) -I$(INC) -c $< -o $@
 
-client.o: client.h client.c builder.o
-	cc $(FLAGS) -c client.h client.c builder.o
+client.o: client.c client.h 
+	cc $(FLAGS) -I$(INC) -c $< -o $@
 
-builder.o: $(INC)messages/builder.h $(INC)messages/builder.c
-	cc $(FLAGS) -c $(INC)messages/builder.h $(INC)messages/builder.c
-
-request.o:
-	@(cd $(INC)protocol/; make request.o; mv request.o ../../client/);
-
-response.o:
-	@(cd $(INC)protocol/; make response.o; mv response.o ../../client/);
-
-shared.o:
-	@(cd $(INC)shmemory/; $(MAKE); mv shared.o ../../client/);
-
-sems.o:
-	@(cd $(INC)semaphores/; $(MAKE); mv sems.o ../../client/);
-
-tools.o:
-	@(cd $(INC)tools/; $(MAKE); mv tools.o ../../client/);
+shared:
+	@(cd $(INC); $(MAKE))
 
 clean: 
-	rm $(BIN) *.o *.gch
+	-rm $(BIN) *.o 

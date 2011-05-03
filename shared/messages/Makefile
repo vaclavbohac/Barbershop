@@ -1,9 +1,11 @@
+all: builder.o
+
 INC = ../
 
-FLAGS = -I$(INC)
+OUT = ../builder.o
 
-builder.o: types.h special.h builder.h builder.c
-	cc $(FLAGS) -c builder.h builder.c special.h types.h
+builder.o: builder.c types.h special.h builder.h 
+	cc $(FLAGS) -I$(INC) -c $< -o $(OUT)
 
 clean:
-	rm *.o *.gch
+	-rm $(OUT)

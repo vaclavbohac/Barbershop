@@ -1,8 +1,9 @@
+FLAGS = -Wall -DDEBUG
+
 all:
-	@(cd server-processes; $(MAKE); mv server ../bin/)
-	@(cd client; $(MAKE); mv client ../bin/)
+	@(cd server-processes; $(MAKE) FLAGS="$(FLAGS)")
+	@(cd client; $(MAKE) FLAGS="$(FLAGS)")
 
 clean:
-	@(cd bin; rm *)
 	@(cd server-processes; make clean)
 	@(cd client; make clean)

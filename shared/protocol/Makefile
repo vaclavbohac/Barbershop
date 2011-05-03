@@ -1,14 +1,13 @@
 all: request.o response.o
 
-FLAGS = -I../
+INC = ../
 
-FLAGS += -DDEBUG
+request.o: request.c request.h
+	cc $(FLAGS) -I$(INC) -c $< -o ../$@
 
-request.o: request.h request.c
-	cc $(FLAGS) -c request.h request.c
-
-response.o: response.h response.c
-	cc $(FLAGS) -c response.h response.c
+response.o: response.c response.h 
+	cc $(FLAGS) -I$(INC) -c $< -o ../$@
 
 clean:
-	rm *.o *.gch
+	-rm ../request.o
+	-rm ../response.o
