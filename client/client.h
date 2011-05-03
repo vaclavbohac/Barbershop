@@ -1,10 +1,7 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-struct client {
-	int socket;
-	int port;
-};
+#include "protocol/client.h"
 
 int client_init(struct client* cli, char* host, int port);
 

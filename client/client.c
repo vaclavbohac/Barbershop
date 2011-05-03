@@ -7,6 +7,10 @@
 
 #include "client.h"
 #include "messages/builder.h"
+#include "shmemory/shared.h"
+#include "semaphores/sems.h"
+#include "protocol/request.h"
+#include "protocol/response.h"
 
 int client_init(struct client* cli, char* host, int port)
 {
@@ -32,73 +36,109 @@ int client_init(struct client* cli, char* host, int port)
 		return -1;
 	}
 
-	cli->socket = sock;
+	cli->handle = sock;
 	cli->port = port;
 
 	return 0;
 }
 
-
-int send_request(struct client* c, struct message* msg)
+void send_time(struct client* cli, int chair)
 {
-	char buffer[256];
-	int len = sprintf(buffer, "%s", build_from_struct(msg)); 
-	return write(c->socket, buffer, len);
-}
+	struct message request;
 
-
-int get_response(struct client* c, struct message* msg)
-{
-	char buffer[256];
-	int length = read(c->socket, buffer, sizeof(buffer));
-	buffer[length] = '\0';
-	if (length == -1) {
-		fprintf(stderr, "Error while reading from socket.\n");
-		return -1;
+	// Send custommer chair.
+	message_init(&request, ANSWER, chair, "chair");
+	printf("%c%d:%s\n", request.type, request.code, request.text);
+	if (send_request(cli, &request) == -1) {
+		fprintf(stderr, "Sending message to server failed.\n");
+		return;
 	}
-	return message_from_string(msg, buffer);
+
+	// Send custommer haircut length.
+	message_init(&request, ANSWER, 8, "seconds");
+	printf("%c%d:%s\n", request.type, request.code, request.text);
+	if (send_request(cli, &request) == -1) {
+		fprintf(stderr, "Sending message to server failed.\n");
+		return;
+	}
 }
 
+void get_haircut(struct client* cli)
+{
+	printf("Getting haircut.\n");
+	struct message request;
+	message_init(&request, COMMAND, 0, "bye");
+	if (send_request(cli, &request) == -1) {
+		fprintf(stderr, "Error while closing connection.\n");
+	}
+}
 
 int client_start(struct client* cli)
 {
 #ifdef DEBUG
 	printf("Client is running.\n");
 #endif
-	struct message* msg = (struct message*)
-				malloc(sizeof(struct message));
-	message_init(msg, COMMAND, 0, "enter");	// 1. Send enter request.
-	if (send_request(cli, msg) == -1) {
+	struct message request;
+	struct message response;
+
+	message_init(&request, COMMAND, 0, "enter"); // 1. Send enter request.
+#ifdef DEBUG
+	printf("Got message %c:%s\n", request.type, request.text);
+#endif
+	if (send_request(cli, &request) == -1) {
 		fprintf(stderr, "Error while sending request.\n");
-		free(msg);
 		return -1;
 	}
 
-	if (get_response(cli, msg) == -1) { // 2. Get response.
+	if (get_response(cli, &response) == -1) { // 2. Get response.
 		fprintf(stderr, "Error while getting response.\n");
-		free(msg);
 		return -1;
 	}
 
-	printf("Message received: %s\n", msg->text);
-	if (!strcmp("chairnotfree", msg->text)) {
+	printf("Message received: %s\n", response.text);
+	if (!strcmp("chairnotfree", response.text)) {
 		printf("Barbershop is full.\n");
 	}
-	else if(msg->type == INFORMATION && msg->code == 1) {
+	else if(response.type == INFORMATION && response.code == 1) {
 		// Chair is free.
-		printf("%s\n", msg->text);
+		printf("%s\n", response.text);
+
+		int uid = getuid();
+
+		// Get shared memory and semaphores.
+		struct shared* data = get_shared(uid);
+		int semaphores = semaphores_init(uid);
+		if (semaphores == -1) {
+			fprintf(stderr, "Error while getting semaphores.\n");
+			return -1;
+		}
+#ifdef DEBUG	
+		printf("Mutex down.\n");
+#endif
+		// Enter critical section.
+		down(semaphores, SEM_MUTEX);
+		// Send information about time.
+		send_time(cli, data->custommers);
+		// Add custommer.
+		data->custommers += 1;
+		up(semaphores, SEM_CUSTOMMERS);
+		// Leave critical section.
+		up(semaphores, SEM_MUTEX);
+		// Wait for barber. 
+		down(semaphores, SEM_BARBER);
+
+		get_haircut(cli);
 	}
 	else {
 		printf("Unknown message.\n");
 	}
 
-	free(msg);
 	return 0;
 }
 
 void client_stop(struct client* cli)
 {
-	if ((void*)cli->socket != NULL) {
-		close(cli->socket);	
+	if ((void*)cli->handle != NULL) {
+		close(cli->handle);	
 	}
 }
