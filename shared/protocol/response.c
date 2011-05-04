@@ -52,7 +52,7 @@ int get_response(struct client* cli, struct message* msg)
 	}
 
 #ifdef DEBUG
-	printf("Read %d bytes from server %d.",
+	printf("Read %d bytes from server %d.\n",
 			length, cli->handle);
 #endif
 

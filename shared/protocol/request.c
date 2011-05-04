@@ -25,7 +25,7 @@ int get_request(struct client* cli, struct message* msg)
 	}
 
 #ifdef DEBUG
-	printf("Read %d bytes from client %d.",
+	printf("Read %d bytes from client %d.\n",
 			length, cli->handle);
 #endif
 
