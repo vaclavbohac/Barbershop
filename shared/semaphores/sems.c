@@ -45,6 +45,11 @@ int semaphores_init(int key)
 		if (semctl(semaphores, SEM_BARBER, SETVAL, 0) == -1) {
 			return -1;
 		}
+
+		// Set up haircut.
+		if (semctl(semaphores, SEM_HAIRCUT, SETVAL, 0) == -1) {
+			return -1;
+		}
 	}
 	return semaphores;
 }
