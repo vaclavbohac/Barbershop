@@ -82,7 +82,6 @@ int main(const int argc, const char* argv[])
 			data->custommers -= 1;
 			// Get time from custommer.
 			int time = data->times[data->custommers];
-			// int handle = data->handles[data->custommers];
 			// Release the kraken.
 			up(data->semaphores, SEM_BARBER);
 			// Leave critical section.
@@ -90,6 +89,10 @@ int main(const int argc, const char* argv[])
 
 			// Cut custommer's hair.
 			cut_hair(time);
+
+			// Run closing procedure.
+			up(data->semaphores, SEM_CUTTED);
+			down(data->semaphores, SEM_SITTING);
 		}
 	}
 	else {

@@ -55,14 +55,16 @@ void process(int handle, struct sockaddr_in* clientAddr)
 
 	if (data->custommers < MAX_CHAIRS) {
 		// Chair is empty.
-		int len = sprintf(buffer, "chair %d is empty", data->custommers + 1);
+		int len = sprintf(buffer, "chair %d is empty",
+					data->custommers + 1);
 		buffer[len] = '\0';
 		message_init(&response, INFORMATION, 1, buffer);
 		send_response(&cli, &response);
 	}
 	else {
 		// Chair is full.
-		message_init(&response, INFORMATION, 0, "chairnotfree");
+		message_init(&response, INFORMATION, 0,
+					"chairnotfree");
 		send_response(&cli, &response);
 		up(semaphores, SEM_MUTEX);
 		return;
@@ -71,13 +73,7 @@ void process(int handle, struct sockaddr_in* clientAddr)
 	// Add custommer.
 	data->custommers += 1;
 	up(semaphores, SEM_CUSTOMMERS);
-	// Leave critical section.
-	up(semaphores, SEM_MUTEX);
-	// Wait for barber. 
-	down(semaphores, SEM_BARBER);
 
-	// Enter critical section.
-	down(semaphores, SEM_MUTEX);
 	message_init(&response, COMMAND, 0, "sit");
 	if (send_response(&cli, &response) == -1) {
 		fprintf(stderr, "Error while sending response.\n");
@@ -91,8 +87,8 @@ void process(int handle, struct sockaddr_in* clientAddr)
 		return;
 	}
 
-	if (strcmp(request.text, "time") != 0) {
-		fprintf(stderr, "Expecting time.\n");
+	if (strcmp(request.text, "seconds") != 0) {
+		fprintf(stderr, "Expecting seconds.\n");
 		up(semaphores, SEM_MUTEX);
 		return;
 	}
@@ -101,8 +97,28 @@ void process(int handle, struct sockaddr_in* clientAddr)
 
 	// Leave critical section.
 	up(semaphores, SEM_MUTEX);
+	// Wait for barber. 
+	down(semaphores, SEM_BARBER);
 
 	get_haircut();
+
+	// Randezvous paradigm.
+	up(semaphores, SEM_SITTING);
+	down(semaphores, SEM_CUTTED);
+
+	message_init(&response, INFORMATION, 0, "done");
+	if (send_response(&cli, &response) == -1) {
+		fprintf(stderr,
+			"Error while sending 'done' response.\n");
+		return;
+	}
+
+	if (get_request(&cli, &request) == -1) {
+		fprintf(stderr,
+			"Error while waiting for request.\n");
+		return;
+	}
+	printf("%s\n", request.text);
 
 	return;
 }
@@ -111,7 +127,8 @@ int handle_request(struct client* cli, struct message* request)
 {
 	char buf[256];
 	int length, chair = 0;
-	printf("Processing command with code: %d (%s).\n", request->code, request->text);
+	printf("Processing command with code: %d (%s).\n",
+			request->code, request->text);
 	switch (request->type) {
 		case COMMAND:
 			if (!strcmp(request->text, "enter")) {

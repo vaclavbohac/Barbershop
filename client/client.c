@@ -86,14 +86,35 @@ int client_start(struct client* cli)
 	}
 	else if(response.type == INFORMATION && response.code == 1) {
 		// Chair is free.
-		printf("%s\n", response.text);
+		printf("Chair message: %s\n", response.text);
 		if (get_response(cli, &response) == -1) {
 			fprintf(stderr, "Error while waiting for 'sit'.\n");
 			return -1;
 		}
 
+		if (strcmp(response.text, "sit") != 0) {
+			fprintf(stderr, "Got different message than sit.\n");
+			return -1;
+		}
+
 		// Send information about time.
 		send_time(cli);
+
+		if (get_response(cli, &response) == -1) {
+			fprintf(stderr, "Error while waiting for 'done'.\n");
+			return -1;
+		}
+
+		if (strcmp(response.text, "done") != 0) {
+			fprintf(stderr, "Got different message than done.\n");
+			return -1;
+		}
+
+		message_init(&response, ANSWER, 0, "bye");
+		if (send_request(cli, &request) == -1) {
+			fprintf(stderr, "Error while sending request.\n");
+			return -1;
+		}
 	}
 	else {
 		printf("Unknown message.\n");
