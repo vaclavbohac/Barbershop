@@ -7,33 +7,104 @@
 
 #include "process.h"
 #include "barber.h"
+#include "semaphores/sems.h"
 #include "shmemory/shared.h"
 #include "protocol/request.h"
 #include "protocol/response.h"
+
+void get_haircut()
+{
+	printf("I am getting haircut\n");
+}
 
 void process(int handle, struct sockaddr_in* clientAddr)
 {
 #ifdef DEBUG
 	printf("Creating client structure.\n");
 #endif
-	struct message msg;
+	char buffer[256];
+	struct message request, response;
+
 	struct client cli;
 	cli.handle = handle;
 
-	while (1) {
-		if (get_request(&cli, &msg) == -1) {
-			fprintf(stderr, "Error while getting request.\n");
-			break;
-		}
-		if (!strcmp(msg.text, "bye")) {
-			printf("User requested 'close' connection.\n");
-			break;
-		}
-		if (handle_request(&cli, &msg) == -1) {
-			fprintf(stderr, "Error when handling request.\n");
-			break;
-		}
+	int uid = getuid();
+
+	// Create semaphores and shared memory.
+	struct shared* data = get_shared(uid);
+	int semaphores = semaphores_init(uid);
+	if (semaphores == -1) {
+		fprintf(stderr, "Error while getting semaphores.\n");
+		return;
 	}
+
+	// Get client request.
+	if (get_request(&cli, &request) == -1) {
+		fprintf(stderr, "Error while getting request.\n");
+		return; // Stop communication.
+	}
+
+	// Is request something different than 'enter'?
+	if (strcmp(request.text, "enter") != 0) {
+		fprintf(stderr, "Bad protocol iniciation.\n");
+		return;
+	}
+
+	// Enter critical section.
+	down(semaphores, SEM_MUTEX);
+
+	if (data->custommers < MAX_CHAIRS) {
+		// Chair is empty.
+		int len = sprintf(buffer, "chair %d is empty", data->custommers + 1);
+		buffer[len] = '\0';
+		message_init(&response, INFORMATION, 1, buffer);
+		send_response(&cli, &response);
+	}
+	else {
+		// Chair is full.
+		message_init(&response, INFORMATION, 0, "chairnotfree");
+		send_response(&cli, &response);
+		up(semaphores, SEM_MUTEX);
+		return;
+	}
+
+	// Add custommer.
+	data->custommers += 1;
+	up(semaphores, SEM_CUSTOMMERS);
+	// Leave critical section.
+	up(semaphores, SEM_MUTEX);
+	// Wait for barber. 
+	down(semaphores, SEM_BARBER);
+
+	// Enter critical section.
+	down(semaphores, SEM_MUTEX);
+	message_init(&response, COMMAND, 0, "sit");
+	if (send_response(&cli, &response) == -1) {
+		fprintf(stderr, "Error while sending response.\n");
+		up(semaphores, SEM_MUTEX);
+		return;
+	}
+
+	if (get_request(&cli, &request) == -1) {
+		fprintf(stderr, "Error while getting request.\n");
+		up(semaphores, SEM_MUTEX);
+		return;
+	}
+
+	if (strcmp(request.text, "time") != 0) {
+		fprintf(stderr, "Expecting time.\n");
+		up(semaphores, SEM_MUTEX);
+		return;
+	}
+
+	data->times[data->custommers - 1] = request.code;
+
+	// Leave critical section.
+	up(semaphores, SEM_MUTEX);
+
+	get_haircut();
+
+	return;
 }
 
 int handle_request(struct client* cli, struct message* request)

@@ -91,11 +91,13 @@ void server_start(struct server* srv)
 			}
 		}
 		else if(FD_ISSET(client, &read_wait_set)) {
+			// Process client request.
 			process(client, &clientAddr);
 			
 			printf("Closing connection with client: '%d'.\n", client);
 			close(client);
 			client = 0;
+
 			exit(EXIT_SUCCESS);
 		}
 	}

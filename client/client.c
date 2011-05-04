@@ -8,8 +8,6 @@
 
 #include "client.h"
 #include "messages/builder.h"
-#include "shmemory/shared.h"
-#include "semaphores/sems.h"
 #include "protocol/request.h"
 #include "protocol/response.h"
 
@@ -43,36 +41,22 @@ int client_init(struct client* cli, char* host, int port)
 	return 0;
 }
 
-void send_time(struct client* cli, int chair)
+
+void send_time(struct client* cli)
 {
 	struct message request;
-
-	// Send custommer chair.
-	message_init(&request, ANSWER, chair, "chair");
-	printf("%c%d:%s\n", request.type, request.code, request.text);
-	if (send_request(cli, &request) == -1) {
-		fprintf(stderr, "Sending message to server failed.\n");
-		return;
-	}
 
 	// Send custommer haircut length.
 	message_init(&request, ANSWER, 8, "seconds");
+#ifdef DEBUG
 	printf("%c%d:%s\n", request.type, request.code, request.text);
+#endif
 	if (send_request(cli, &request) == -1) {
 		fprintf(stderr, "Sending message to server failed.\n");
 		return;
 	}
 }
 
-void get_haircut(struct client* cli)
-{
-	printf("Getting haircut.\n");
-	struct message request;
-	message_init(&request, COMMAND, 0, "bye");
-	if (send_request(cli, &request) == -1) {
-		fprintf(stderr, "Error while closing connection.\n");
-	}
-}
 
 int client_start(struct client* cli)
 {
@@ -84,7 +68,7 @@ int client_start(struct client* cli)
 
 	message_init(&request, COMMAND, 0, "enter"); // 1. Send enter request.
 #ifdef DEBUG
-	printf("Got message %c:%s\n", request.type, request.text);
+	printf("Sending request %c:%s\n", request.type, request.text);
 #endif
 	if (send_request(cli, &request) == -1) {
 		fprintf(stderr, "Error while sending request.\n");
@@ -103,32 +87,13 @@ int client_start(struct client* cli)
 	else if(response.type == INFORMATION && response.code == 1) {
 		// Chair is free.
 		printf("%s\n", response.text);
-
-		int uid = getuid();
-
-		// Get shared memory and semaphores.
-		struct shared* data = get_shared(uid);
-		int semaphores = semaphores_init(uid);
-		if (semaphores == -1) {
-			fprintf(stderr, "Error while getting semaphores.\n");
+		if (get_response(cli, &response) == -1) {
+			fprintf(stderr, "Error while waiting for 'sit'.\n");
 			return -1;
 		}
-#ifdef DEBUG	
-		printf("Mutex down.\n");
-#endif
-		// Enter critical section.
-		down(semaphores, SEM_MUTEX);
-		// Send information about time.
-		send_time(cli, data->custommers);
-		// Add custommer.
-		data->custommers += 1;
-		up(semaphores, SEM_CUSTOMMERS);
-		// Leave critical section.
-		up(semaphores, SEM_MUTEX);
-		// Wait for barber. 
-		down(semaphores, SEM_BARBER);
 
-		get_haircut(cli);
+		// Send information about time.
+		send_time(cli);
 	}
 	else {
 		printf("Unknown message.\n");
