@@ -60,7 +60,7 @@ TEST(test_messages, test_build_from_struct)
 	
 	m.type = 'A';
 	m.code = 042;
-	m.text = "Example";
+	strcpy(m.text, "Example");
 
 	ASSERT_STREQ("A42:Example", build_from_struct(&m));
 }

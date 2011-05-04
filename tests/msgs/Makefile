@@ -1,19 +1,15 @@
-SRV_PROC_DIR = ../../server-processes/
+all: test
 
-BIN = test_builder
+BIN = ../bin/test_builder
 
 FLAGS = -Wall
 
 FLAGS += -lgtest_main -lpthread
 
-FLAGS += -I$(SRV_PROC_DIR)
+FLAGS += -I../../shared
 
-
-test: test_builder.cpp builder.o
-	g++ -o $(BIN) $(FLAGS) test_builder.cpp builder.o
-
-builder.o: $(SRV_PROC_DIR)messages/builder.c $(SRV_PROC_DIR)messages/builder.h
-	g++ -c $(SRV_PROC_DIR)messages/builder.c $(SRV_PROC_DIR)messages/builder.h
+test: test_builder.cpp ../../shared/messages/builder.c ../../shared/tools/tools.c
+	g++ $(FLAGS) -o $(BIN) $^
 
 clean:
-	rm $(BIN) *.o
+	-rm $(BIN) *.o

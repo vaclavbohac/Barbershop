@@ -1,7 +1,7 @@
 all:
-	@(cd msgs; $(MAKE); find . -executable -type f -exec mv {} ../bin/ \;)
-	@(cd helpers; $(MAKE); find . -executable -type f -exec mv {} ../bin/ \;)
+	@(cd msgs; $(MAKE))
+	@(cd helpers; $(MAKE))
 
 clean:
-	rm msgs/*.o helpers/*.o
-	rm bin/*
+	@(cd msgs; $(MAKE) clean)
+	@(cd helpers; $(MAKE) clean)
