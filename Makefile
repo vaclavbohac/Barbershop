@@ -1,4 +1,7 @@
-FLAGS = -Wall -DDEBUG
+FLAGS = -Wall
+
+# Uncomment line bellow for debug mode.
+# FLAGS += -DDEBUG
 
 all:
 	@(cd server-processes; $(MAKE) FLAGS="$(FLAGS)")
