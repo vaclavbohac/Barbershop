@@ -5,6 +5,10 @@ all:
 	@(cd client; $(MAKE) FLAGS="$(FLAGS)")
 
 clean:
-	@(cd server-processes; make clean)
-	@(cd client; make clean)
-	@(cd shared; make clean)
+	@(cd server-processes; $(MAKE) clean)
+	@(cd client; $(MAKE) clean)
+	@(cd shared; $(MAKE) clean)
+	@(cd tools;  $(MAKE) clean)
+
+clrshared:
+	@(cd tools; $(MAKE); ./clrsems; ./clrshm);
