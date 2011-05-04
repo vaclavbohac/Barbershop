@@ -40,9 +40,9 @@ void process_args(const char** args, const int length)
 
 void cut_hair(int time)
 {
-	printf("Cutting hair for %d seconds.\n", time);
+	printf("Barber: Cutting hair for %d seconds.\n", time);
 	sleep(time);
-	printf("Hair cutted.\n");
+	printf("Barber: Hair cutted.\n");
 }
 
 int main(const int argc, const char* argv[])
@@ -51,7 +51,7 @@ int main(const int argc, const char* argv[])
 	process_args(argv, argc);
 
 #ifdef DEBUG
-	fprintf(stderr, "Creating barber process.\n");
+	fprintf(stderr, "Server: Creating barber process.\n");
 #endif
 
 	int pid = fork();
@@ -72,7 +72,7 @@ int main(const int argc, const char* argv[])
 		data->custommers = 0;
 		while (1) {
 #ifdef DEBUG
-			printf("Custommers down.\n");
+			printf("Barber: Custommers down.\n");
 #endif
 			// Wait for custommer.
 			down(data->semaphores, SEM_CUSTOMMERS);

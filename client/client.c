@@ -67,26 +67,30 @@ int client_start(struct client* cli)
 	struct message response;
 
 	message_init(&request, COMMAND, 0, "enter"); // 1. Send enter request.
-#ifdef DEBUG
-	printf("Sending request %c:%s\n", request.type, request.text);
-#endif
 	if (send_request(cli, &request) == -1) {
 		fprintf(stderr, "Error while sending request.\n");
 		return -1;
 	}
+	printf("<= enter\n");
 
 	if (get_response(cli, &response) == -1) { // 2. Get response.
 		fprintf(stderr, "Error while getting response.\n");
 		return -1;
 	}
 
-	printf("Message received: %s\n", response.text);
 	if (!strcmp("chairnotfree", response.text)) {
-		printf("Barbershop is full.\n");
+		printf("=> chair is not free\n");
 	}
 	else if(response.type == INFORMATION && response.code == 1) {
 		// Chair is free.
-		printf("Chair message: %s\n", response.text);
+
+		message_init(&request, ANSWER, 0, "ok");
+		if (send_request(cli, &request) == -1) {
+			fprintf(stderr, "Error while handshaking.\n");
+			return -1;
+		}
+		printf("<= ok\n");
+
 		if (get_response(cli, &response) == -1) {
 			fprintf(stderr, "Error while waiting for 'sit'.\n");
 			return -1;
@@ -96,6 +100,7 @@ int client_start(struct client* cli)
 			fprintf(stderr, "Got different message than sit.\n");
 			return -1;
 		}
+		printf("=> chair is free\n");
 
 		// Send information about time.
 		send_time(cli);
@@ -109,12 +114,14 @@ int client_start(struct client* cli)
 			fprintf(stderr, "Got different message than done.\n");
 			return -1;
 		}
+		printf("=> done\n");
 
 		message_init(&response, ANSWER, 0, "bye");
 		if (send_request(cli, &request) == -1) {
 			fprintf(stderr, "Error while sending request.\n");
 			return -1;
 		}
+		printf("<= bye\n");
 	}
 	else {
 		printf("Unknown message.\n");

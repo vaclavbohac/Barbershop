@@ -54,9 +54,7 @@ int message_from_string(struct message* msg, const char* string)
 {
 	int code = 0;
 	char type = INFORMATION, *text = "";
-#ifdef DEBUG
-	printf("String in message from string: %s, length %d\n", string, strlen(string));
-#endif
+
 	if (strlen(string) < 1 || !is_valid_type(string[0])) {
 		return -1;
 	}

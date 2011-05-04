@@ -66,23 +66,22 @@ void server_start(struct server* srv)
 			FD_SET(srv->socket, &read_wait_set) :
 			FD_SET(client, &read_wait_set);
 
-		if (select(MAX(srv->socket, client) + 1, &read_wait_set, 0, 0, 0) == -1) {
-			perror("Select error:");
+		if (select(MAX(srv->socket, client) + 1,
+				&read_wait_set, 0, 0, 0) == -1) {
+			perror("Select error");
 			break;
 		}
 		
 		if (FD_ISSET(srv->socket, &read_wait_set)) {
-			client = accept(srv->socket, (struct sockaddr*)&clientAddr, &clientSize);
+			client = accept(srv->socket,
+				(struct sockaddr*)&clientAddr, &clientSize);
 			if (client == -1) {
 				perror("Error while accepting connection.");
 			}
-			printf("Accepted client: '%d'.\n", client);
-#ifdef DEBUG
-			printf("Creating new child.\n");
-#endif
+			printf("Server: Accepted client: '%d'.\n", client);
 			pid = fork();
 			if (pid == -1) {
-				perror("Error while forking.");
+				perror("Server: Error while forking.");
 			}
 			else if (pid > 0) {
 				// Close what is not needed.
@@ -94,7 +93,7 @@ void server_start(struct server* srv)
 			// Process client request.
 			process(client, &clientAddr);
 			
-			printf("Closing connection with client: '%d'.\n", client);
+			printf("Server: Closing connection with client: '%d'.\n", client);
 			close(client);
 			client = 0;
 

@@ -23,7 +23,7 @@ void process(int handle, struct sockaddr_in* clientAddr)
 	printf("Creating client structure.\n");
 #endif
 	char buffer[256];
-	struct message request, response;
+	struct message request, response, sit;
 
 	struct client cli;
 	cli.handle = handle;
@@ -49,6 +49,7 @@ void process(int handle, struct sockaddr_in* clientAddr)
 		fprintf(stderr, "Bad protocol iniciation.\n");
 		return;
 	}
+	printf("<= enter\n");
 
 	// Enter critical section.
 	down(semaphores, SEM_MUTEX);
@@ -58,14 +59,36 @@ void process(int handle, struct sockaddr_in* clientAddr)
 		int len = sprintf(buffer, "chair %d is empty",
 					data->custommers + 1);
 		buffer[len] = '\0';
-		message_init(&response, INFORMATION, 1, buffer);
-		send_response(&cli, &response);
+		message_init(&response, INFORMATION, 1,
+						"chair is empty");
+		if (send_response(&cli, &response) == -1) {
+			fprintf(stderr, "Error chair free.\n");
+			up(semaphores, SEM_MUTEX);
+			return;
+		}
+		if (get_request(&cli, &request) == -1) {
+			fprintf(stderr, "Error while handshaking.\n");
+			up(semaphores, SEM_MUTEX);
+			return;
+		}
+		if (request.type != ANSWER
+			|| strcmp(request.text, "ok")) {
+			fprintf(stderr, "Handshake error.\n");
+			up(semaphores, SEM_MUTEX);
+			return;
+		}
+		printf("=> chair is free\n");
 	}
 	else {
 		// Chair is full.
 		message_init(&response, INFORMATION, 0,
 					"chairnotfree");
-		send_response(&cli, &response);
+		if (send_response(&cli, &response) == -1) {
+			fprintf(stderr, "Error chair not free.\n");
+			up(semaphores, SEM_MUTEX);
+			return;
+		}
+		printf("=> chair not free\n");
 		up(semaphores, SEM_MUTEX);
 		return;
 	}
@@ -74,12 +97,13 @@ void process(int handle, struct sockaddr_in* clientAddr)
 	data->custommers += 1;
 	up(semaphores, SEM_CUSTOMMERS);
 
-	message_init(&response, COMMAND, 0, "sit");
-	if (send_response(&cli, &response) == -1) {
+	message_init(&sit, COMMAND, 0, "sit");
+	if (send_response(&cli, &sit) == -1) {
 		fprintf(stderr, "Error while sending response.\n");
 		up(semaphores, SEM_MUTEX);
 		return;
 	}
+	printf("=> sit\n");
 
 	if (get_request(&cli, &request) == -1) {
 		fprintf(stderr, "Error while getting request.\n");
@@ -92,6 +116,7 @@ void process(int handle, struct sockaddr_in* clientAddr)
 		up(semaphores, SEM_MUTEX);
 		return;
 	}
+	printf("<= seconds\n");
 
 	data->times[data->custommers - 1] = request.code;
 
@@ -112,13 +137,14 @@ void process(int handle, struct sockaddr_in* clientAddr)
 			"Error while sending 'done' response.\n");
 		return;
 	}
+	printf("=> done\n");
 
 	if (get_request(&cli, &request) == -1) {
 		fprintf(stderr,
 			"Error while waiting for request.\n");
 		return;
 	}
-	printf("%s\n", request.text);
+	printf("<= bye\n");
 
 	return;
 }

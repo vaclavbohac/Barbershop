@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include "response.h"
 
@@ -15,6 +16,9 @@ int send_response(struct client* cli, struct message* msg)
 	// Set null terminator.
 	buffer[length] = '\0';
 
+#ifdef DEBUG
+	printf("Send response: %s", buffer);
+#endif
 	// Send buffered data to client.
 	ret = write(cli->handle, buffer, length);
 	if (ret == -1) {
@@ -33,9 +37,9 @@ int send_response(struct client* cli, struct message* msg)
 
 int get_response(struct client* cli, struct message* msg)
 {
-	char buffer[256];
-	int  length,
-	     bufsize = (int) sizeof(buffer);
+	char c, buffer[256];
+	int  i, length,
+	     bufsize = sizeof(buffer);
 
 	// Read data from server.
 	length = read(cli->handle, buffer, bufsize);
@@ -58,6 +62,22 @@ int get_response(struct client* cli, struct message* msg)
 
 	// Set null terminator.
 	buffer[length] = '\0';
+
+#ifdef DEBUG
+	printf("Buffer in get response: %s", buffer);
+#endif
+
+	// Cut received data to first '\n'.
+	for (i = 0; i < length; i++) {
+		c = buffer[i];
+		if (isspace(c) && !isblank(c)) {
+			buffer[i + 1] = '\0';
+		}
+	}
+
+#ifdef DEBUG
+	printf("Buffer after shortening: %s", buffer);
+#endif
 
 	if (message_from_string(msg, buffer) == -1) {
 		// Message is invalid.
