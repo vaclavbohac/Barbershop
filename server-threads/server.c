@@ -24,14 +24,21 @@ void server_start(struct server* srv)
 
 	while (1) {
 		client = accept(srv->socket,
-				(struct sockaddr*)&clientAddr, &clientSize);
+			(struct sockaddr*)&clientAddr, &clientSize);
 		if (client == -1) {
 			perror("Error while accepting connection.");
-			continue;
+			return;
 		}
 		printf("Server: Accepted client: '%d'.\n", client);
-		pthread_create(&id, NULL, handleClient, (void *) client);
-		pthread_detach(id);
+		if (pthread_create(&id, NULL, handleClient,
+				(void *) client)) {
+			perror("Error while creating thread");
+			return;
+		}
+		if (pthread_detach(id)) {
+			perror("Error while detaching thread");
+			return;
+		}
 	}
 }
 
