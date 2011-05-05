@@ -10,33 +10,14 @@
 
 #include "barber.h"
 #include "server.h"
-#include "help.h"
 
+#include "tools/procargs.h"
 #include "protocol/server.h"
 #include "semaphores/sems.h"
 #include "shmemory/shared.h"
 #include "messages/builder.h"
 
 #define DEFAULT_PORT 4242
-
-int global_port = DEFAULT_PORT;
-
-void process_args(const char** args, const int length)
-{
-	char buf[128], *port = "--port=";
-	int i, n = (int) strlen(port);
-	for (i = 0; i < length; i++) {
-		if (!strcmp(args[i], "--help")) {
-			sprintf(buf, "%.*s", (int) strlen(args[0]) - 2, args[0] + 2);
-			help(buf);
-			exit(EXIT_SUCCESS);
-		}
-		if (!strncmp(args[i], port, n)) {
-			sprintf(buf, "%.*s", 4, args[i] + n);
-			global_port = atoi(buf);
-		}
-	}
-}
 
 void cut_hair(int time)
 {
@@ -47,8 +28,11 @@ void cut_hair(int time)
 
 int main(const int argc, const char* argv[])
 {
+	struct server s;
+	s.port = DEFAULT_PORT;
+
 	// Process user arguments.
-	process_args(argv, argc);
+	process_args(&s, argv, argc);
 
 #ifdef DEBUG
 	fprintf(stderr, "Server: Creating barber process.\n");
@@ -99,14 +83,13 @@ int main(const int argc, const char* argv[])
 		// Ignore SIGCHLD. 
 		signal(SIGCHLD, SIG_IGN);
 
-		struct server s;
 		// Initialize server socket and bind it.
-		if (server_init(&s, global_port) == -1) {
+		if (server_init(&s, s.port) == -1) {
 			perror("Error while init. of server");
 			return EXIT_FAILURE;
 		}
 
-		printf("Server is running on port: %d\n", global_port);
+		printf("Server is running on port: %d\n", s.port);
 		server_start(&s); // Run Forest, run!
 
 		// Stop server, free memory and wait.
