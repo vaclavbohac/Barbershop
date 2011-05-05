@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include "process.h"
+#include "protocol/process.h"
 #include "protocol/server.h"
 
 void server_start(struct server* srv)
@@ -53,7 +53,7 @@ void server_start(struct server* srv)
 		}
 		else if(FD_ISSET(client, &read_wait_set)) {
 			// Process client request.
-			process(client, &clientAddr);
+			process(client);
 			
 			printf("Server: Closing connection with client: '%d'.\n", client);
 			close(client);

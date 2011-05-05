@@ -6,8 +6,6 @@
 #include "messages/builder.h"
 #include "protocol/client.h"
 
-void process(int client, struct sockaddr_in* clientAddr);
-
-int handle_request(struct client* cli, struct message* request);
+void process(int client);
 
 #endif

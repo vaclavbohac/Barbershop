@@ -1,8 +1,11 @@
-all: server.o request.o response.o
+all: server.o request.o response.o process.o
 
 INC = ../
 
 server.o: server.c server.h
+	cc $(FLAGS) -I$(INC) -c $< -o ../$@
+
+process.o: process.c process.h
 	cc $(FLAGS) -I$(INC) -c $< -o ../$@
 
 request.o: request.c request.h
@@ -13,5 +16,6 @@ response.o: response.c response.h
 
 clean:
 	-rm ../server.o
+	-rm ../process.o
 	-rm ../request.o
 	-rm ../response.o

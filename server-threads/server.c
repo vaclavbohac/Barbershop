@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include "protocol/process.h"
 #include "protocol/server.h"
 
 void *handleClient(void *arg);
@@ -45,10 +46,7 @@ void server_start(struct server* srv)
 void *handleClient(void *arg)
 {
 	int client = (int) arg;
-	char buffer[256];
-	int length = read(client, buffer, sizeof(buffer));
-	buffer[length] = '\0';
-	printf("<= %s", buffer);
+	process(client);
 	printf("Server: Closing connection with client %d\n", client);
 	close(client);
 	pthread_exit((void *) 0);
