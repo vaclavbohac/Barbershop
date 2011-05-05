@@ -9,7 +9,6 @@
 #include <signal.h>
 
 #include "barber.h"
-#include "server.h"
 
 #include "tools/procargs.h"
 #include "protocol/server.h"
