@@ -5,4 +5,6 @@
 
 void cut_hair(int time);
 
+void barber(void);
+
 #endif

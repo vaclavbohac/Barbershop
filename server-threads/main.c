@@ -11,41 +11,9 @@
 
 #define DEFAULT_PORT 8080
 
-void *barber(void *args)
+void *run_barber(void *args)
 {
-	// Set shared memory and semaphores.
-	struct shared* data = get_shared(getuid());
-	data->semaphores = semaphores_init(getuid());
-	if (data->semaphores == -1) {
-		perror("Semaphores initialization error");
-		pthread_exit((void *) 1);
-	}
-	// Set customers to the default state.
-	data->custommers = 0;
-	while (1) {
-#ifdef DEBUG
-		printf("Barber: Custommers down.\n");
-#endif
-		// Wait for custommer.
-		down(data->semaphores, SEM_CUSTOMMERS);
-		// Enter critical section.
-		down(data->semaphores, SEM_MUTEX);
-		// Decrease number of custommers.
-		data->custommers -= 1;
-		// Get time from custommer.
-		int time = data->times[data->custommers];
-		// Release the kraken.
-		up(data->semaphores, SEM_BARBER);
-		// Leave critical section.
-		up(data->semaphores, SEM_MUTEX);
-
-		// Cut custommer's hair.
-		cut_hair(time);
-
-		// Run closing procedure.
-		up(data->semaphores, SEM_CUTTED);
-		down(data->semaphores, SEM_SITTING);
-	}
+	barber();
 	pthread_exit((void *) 0);
 }
 
@@ -60,7 +28,7 @@ int main(const int argc, const char* argv[])
 	process_args(&s, argv, argc);
 
 	pthread_t tid;
-	pthread_create(&tid, NULL, barber, NULL);
+	pthread_create(&tid, NULL, run_barber, NULL);
 	pthread_detach(tid);
 
 	// Initialize server socket and bind it.

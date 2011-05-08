@@ -37,39 +37,7 @@ int main(const int argc, const char* argv[])
 	}
 
 	if (!pid) { // Barber (child) process.
-		// Set shared memory and semaphores.
-		struct shared* data = get_shared(getuid());
-		data->semaphores = semaphores_init(getuid());
-		if (data->semaphores == -1) {
-			perror("Semaphores initialization error");
-			return EXIT_FAILURE;
-		}
-		// Set customers to the default state.
-		data->custommers = 0;
-		while (1) {
-#ifdef DEBUG
-			printf("Barber: Custommers down.\n");
-#endif
-			// Wait for custommer.
-			down(data->semaphores, SEM_CUSTOMMERS);
-			// Enter critical section.
-			down(data->semaphores, SEM_MUTEX);
-			// Decrease number of custommers.
-			data->custommers -= 1;
-			// Get time from custommer.
-			int time = data->times[data->custommers];
-			// Release the kraken.
-			up(data->semaphores, SEM_BARBER);
-			// Leave critical section.
-			up(data->semaphores, SEM_MUTEX);
-
-			// Cut custommer's hair.
-			cut_hair(time);
-
-			// Run closing procedure.
-			up(data->semaphores, SEM_CUTTED);
-			down(data->semaphores, SEM_SITTING);
-		}
+		barber();
 	}
 	else {
 		// Ignore SIGCHLD. 
