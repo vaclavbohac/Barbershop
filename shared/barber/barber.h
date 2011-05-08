@@ -3,4 +3,6 @@
 
 #define MAX_CHAIRS 5
 
+void cut_hair(int time);
+
 #endif

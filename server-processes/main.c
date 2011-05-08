@@ -8,8 +8,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#include "barber.h"
-
+#include "barber/barber.h"
 #include "tools/procargs.h"
 #include "protocol/server.h"
 #include "semaphores/sems.h"
@@ -18,12 +17,6 @@
 
 #define DEFAULT_PORT 4242
 
-void cut_hair(int time)
-{
-	printf("Barber: Cutting hair for %d seconds.\n", time);
-	sleep(time);
-	printf("Barber: Hair cutted.\n");
-}
 
 int main(const int argc, const char* argv[])
 {

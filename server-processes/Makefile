@@ -6,7 +6,7 @@ INC = ../shared
 CFLAGS = $(FLAGS) -I$(INC)
 
 server: main.o server.o shared
-	cc $(CFLAGS) -o $(BIN) $< server.o ../shared/server.o ../shared/args.o ../shared/help.o ../shared/builder.o  ../shared/tools.o ../shared/shared.o ../shared/sems.o ../shared/request.o ../shared/response.o ../shared/process.o
+	cc $(CFLAGS) -o $(BIN) $< server.o ../shared/server.o ../shared/args.o ../shared/help.o ../shared/builder.o  ../shared/tools.o ../shared/shared.o ../shared/sems.o ../shared/request.o ../shared/response.o ../shared/process.o ../shared/barber.o
 
 main.o: main.c
 	cc $(CFLAGS) -c $<

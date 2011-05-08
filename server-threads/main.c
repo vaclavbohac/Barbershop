@@ -3,20 +3,13 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "barber.h"
+#include "barber/barber.h"
 #include "tools/procargs.h"
 #include "protocol/server.h"
 #include "semaphores/sems.h"
 #include "shmemory/shared.h"
 
 #define DEFAULT_PORT 8080
-
-void cut_hair(int time)
-{
-	printf("Barber: Cutting hair for %d seconds.\n", time);
-	sleep(time);
-	printf("Barber: Hair cutted.\n");
-}
 
 void *barber(void *args)
 {

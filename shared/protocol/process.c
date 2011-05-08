@@ -6,7 +6,7 @@
 #include <sys/types.h>
 
 #include "process.h"
-#include "barber.h"
+#include "barber/barber.h"
 #include "semaphores/sems.h"
 #include "shmemory/shared.h"
 #include "protocol/request.h"
