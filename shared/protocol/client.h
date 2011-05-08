@@ -4,6 +4,7 @@
 struct client {
 	char host[128];
 	int handle;
+	int time;
 	int port;
 };
 

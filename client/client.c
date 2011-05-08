@@ -47,7 +47,7 @@ void send_time(struct client* cli)
 	struct message request;
 
 	// Send custommer haircut length.
-	message_init(&request, ANSWER, 8, "seconds");
+	message_init(&request, ANSWER, cli->time, "seconds");
 #ifdef DEBUG
 	printf("%c%d:%s\n", request.type, request.code, request.text);
 #endif
