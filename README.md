@@ -1,7 +1,7 @@
 Barbershop
 ==========
 
-Implementation of well known IPC (inter-process communication) problem called sleeping barber (http://en.wikipedia.org/wiki/Sleeping_barber_problem).
+Implementation of well known IPC (inter-process communication) problem called [sleeping barber](http://en.wikipedia.org/wiki/Sleeping_barber_problem).
 
 All you have to do to compile project is run 'make' in the project root directory.
     $ make
