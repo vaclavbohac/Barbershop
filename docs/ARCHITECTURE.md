@@ -194,21 +194,3 @@ cd tests
 make
 ./run_tests.sh
 ```
-
-## Known rough edges
-
-These are documented for anyone revisiting or modernizing the code; they are
-not currently fixed:
-
-- **`shmget` size** — `shmemory/shared.c` requests `sizeof(struct shared*)`
-  (a pointer, ~8 bytes) instead of `sizeof(struct shared)`. It works in
-  practice because the kernel rounds the segment up to a page, but it is
-  technically incorrect.
-- **`MUTEX` held across the protocol handshake** — the `process()` handler
-  performs blocking socket I/O while inside the `SEM_MUTEX` critical section.
-  It is correct here, but the flow around the rendezvous is subtle.
-- **`int`↔`void*` casts** — the threads server casts the client socket fd
-  through `void*` (`server-threads/server.c`). This works on LP64 platforms
-  but generates warnings.
-- **Unused field** — `handles[5]` in `struct shared` is declared but never
-  used.
